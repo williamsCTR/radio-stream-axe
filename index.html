@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LV11 | Radio en vivo</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+
+            font-family: Arial, Helvetica, sans-serif;
+
+            background:
+                radial-gradient(circle at top, #353535 0%, #161616 45%, #090909 100%);
+
+            color: white;
+        }
+
+        .player {
+            width: 100%;
+            max-width: 420px;
+
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            border-radius: 28px;
+
+            padding: 40px 32px;
+
+            text-align: center;
+
+            box-shadow:
+                0 25px 60px rgba(0, 0, 0, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+            backdrop-filter: blur(15px);
+        }
+
+        /* =========================
+           EN VIVO
+        ========================== */
+
+        .live {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+
+            padding: 7px 13px;
+
+            background: rgba(255, 60, 60, 0.12);
+            border: 1px solid rgba(255, 70, 70, 0.25);
+            border-radius: 30px;
+
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+
+            color: #ff6565;
+
+            margin-bottom: 30px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+
+            background: #ff3d3d;
+            border-radius: 50%;
+
+            box-shadow: 0 0 10px #ff3d3d;
+
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .3;
+            }
+        }
+
+        /* =========================
+           LOGO
+        ========================== */
+
+        .logo-container {
+            width: 150px;
+            height: 150px;
+
+            margin: 0 auto 25px;
+
+            border-radius: 50%;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            background: #fff;
+
+            box-shadow:
+                0 15px 35px rgba(0, 0, 0, .35),
+                0 0 0 7px rgba(255, 255, 255, .04);
+        }
+
+        .logo-container img {
+            width: 125px;
+            height: 125px;
+
+            object-fit: contain;
+
+            border-radius: 50%;
+        }
+
+        /* Si todavía no pusiste logo */
+        .logo-placeholder {
+            font-size: 38px;
+            font-weight: bold;
+            color: #222;
+        }
+
+        /* =========================
+           INFORMACIÓN
+        ========================== */
+
+        h1 {
+            font-size: 34px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #aaa;
+            font-size: 15px;
+
+            margin-bottom: 32px;
+        }
+
+        /* =========================
+           BOTÓN
+        ========================== */
+
+        #playButton {
+            width: 100%;
+
+            border: none;
+            outline: none;
+
+            padding: 16px 20px;
+
+            border-radius: 14px;
+
+            background: white;
+            color: #111;
+
+            font-size: 16px;
+            font-weight: bold;
+
+            cursor: pointer;
+
+            transition:
+                transform .2s ease,
+                background .2s ease,
+                box-shadow .2s ease;
+        }
+
+        #playButton:hover {
+            transform: translateY(-2px);
+
+            background: #f1f1f1;
+
+            box-shadow: 0 10px 25px rgba(0, 0, 0, .25);
+        }
+
+        #playButton:active {
+            transform: scale(.98);
+        }
+
+        /* =========================
+           ESTADO
+        ========================== */
+
+        .status-container {
+            margin-top: 25px;
+
+            padding-top: 22px;
+
+            border-top: 1px solid rgba(255, 255, 255, .08);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            gap: 8px;
+
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+
+            background: #777;
+
+            border-radius: 50%;
+        }
+
+        .status-dot.playing {
+            background: #3ed67b;
+
+            box-shadow: 0 0 8px #3ed67b;
+        }
+
+        .status-dot.waiting {
+            background: #ffc107;
+
+            box-shadow: 0 0 8px #ffc107;
+        }
+
+        .status-dot.error {
+            background: #ff4545;
+
+            box-shadow: 0 0 8px #ff4545;
+        }
+
+        /* =========================
+           CONTADOR
+        ========================== */
+
+        .timer {
+            margin-top: 18px;
+
+            font-size: 32px;
+            font-weight: 300;
+
+            letter-spacing: 2px;
+
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-label {
+            margin-top: 5px;
+
+            font-size: 11px;
+            color: #777;
+
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* =========================
+           INFO TÉCNICA
+        ========================== */
+
+        .technical {
+            margin-top: 28px;
+
+            padding: 13px;
+
+            border-radius: 10px;
+
+            background: rgba(0, 0, 0, .18);
+
+            font-size: 11px;
+
+            color: #777;
+
+            line-height: 1.7;
+        }
+
+        .technical strong {
+            color: #aaa;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================== */
+
+        @media (max-width: 480px) {
+
+            .player {
+                padding: 32px 22px;
+            }
+
+            .logo-container {
+                width: 130px;
+                height: 130px;
+            }
+
+            .logo-container img {
+                width: 105px;
+                height: 105px;
+            }
+
+            h1 {
+                font-size: 29px;
+            }
+
+            .timer {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+
+
+<body>
+
+    <main class="player">
+
+        <!-- EN VIVO -->
+
+        <div class="live">
+            <span class="live-dot"></span>
+            EN VIVO
+        </div>
+
+
+        <!-- LOGO -->
+
+        <div class="logo-container">
+
+            <img src="logo lv11.png" alt="Logo LV11">
+
+            <div class="logo-placeholder">
+            </div>
+
+        </div>
+
+
+        <!-- RADIO -->
+
+        <h1>LV11</h1>
+
+        <p class="subtitle">
+            La radio de los santiagueños
+        </p>
+
+
+        <!-- AUDIO -->
+
+        <audio id="radio" preload="none" src="https://streaming01.shockmedia.com.ar:9562/stream">
+        </audio>
+
+
+        <!-- BOTÓN -->
+
+        <button id="playButton">
+            ▶ ESCUCHAR EN VIVO
+        </button>
+
+
+        <!-- ESTADO -->
+
+        <div class="status-container">
+
+            <div class="status">
+
+                <span id="statusDot" class="status-dot">
+                </span>
+
+                <span id="statusText">
+                    Transmisión detenida
+                </span>
+
+            </div>
+
+
+            <!-- CONTADOR -->
+
+            <div id="timer" class="timer">
+                00:00:00
+            </div>
+
+            <div class="timer-label">
+                tiempo de reproducción
+            </div>
+
+        </div>
+
+
+        <!-- INFORMACIÓN -->
+
+        <div class="technical">
+
+            <strong>CONEXIÓN</strong><br>
+
+            Directa al servidor de streaming<br>
+
+            Sin proxy · Sin backend
+
+        </div>
+
+    </main>
+
+
+    <script>
+
+        // ================================
+        // ELEMENTOS
+        // ================================
+
+        const radio =
+            document.getElementById("radio");
+
+        const playButton =
+            document.getElementById("playButton");
+
+        const statusText =
+            document.getElementById("statusText");
+
+        const statusDot =
+            document.getElementById("statusDot");
+
+        const timer =
+            document.getElementById("timer");
+
+
+        // ================================
+        // CONTADOR
+        // ================================
+
+        let segundos = 0;
+
+        let intervalo = null;
+
+
+        function actualizarContador() {
+
+            segundos++;
+
+            const horas =
+                Math.floor(segundos / 3600);
+
+            const minutos =
+                Math.floor((segundos % 3600) / 60);
+
+            const segundosRestantes =
+                segundos % 60;
+
+
+            timer.textContent =
+                String(horas).padStart(2, "0")
+                + ":" +
+                String(minutos).padStart(2, "0")
+                + ":" +
+                String(segundosRestantes).padStart(2, "0");
+        }
+
+
+        function iniciarContador() {
+
+            if (intervalo !== null) {
+                return;
+            }
+
+            intervalo =
+                setInterval(actualizarContador, 1000);
+        }
+
+
+        function detenerContador() {
+
+            clearInterval(intervalo);
+
+            intervalo = null;
+        }
+
+
+        // ================================
+        // BOTÓN PLAY / PAUSE
+        // ================================
+
+        playButton.addEventListener(
+            "click",
+            async () => {
+
+                if (radio.paused) {
+
+                    try {
+
+                        statusText.textContent =
+                            "Conectando...";
+
+                        statusDot.className =
+                            "status-dot waiting";
+
+
+                        await radio.play();
+
+
+                    } catch (error) {
+
+                        console.error(
+                            "Error reproduciendo stream:",
+                            error
+                        );
+
+                        statusText.textContent =
+                            "No se pudo iniciar la transmisión";
+
+                        statusDot.className =
+                            "status-dot error";
+                    }
+
+                } else {
+
+                    radio.pause();
+
+                }
+
+            }
+        );
+
+
+        // ================================
+        // EVENTO: REPRODUCIENDO
+        // ================================
+
+        radio.addEventListener(
+            "playing",
+            () => {
+
+                playButton.textContent =
+                    "⏸ PAUSAR";
+
+                statusText.textContent =
+                    "Transmisión en directo";
+
+                statusDot.className =
+                    "status-dot playing";
+
+                iniciarContador();
+
+            }
+        );
+
+
+        // ================================
+        // EVENTO: PAUSA
+        // ================================
+
+        radio.addEventListener(
+            "pause",
+            () => {
+
+                playButton.textContent =
+                    "▶ ESCUCHAR EN VIVO";
+
+                statusText.textContent =
+                    "Transmisión pausada";
+
+                statusDot.className =
+                    "status-dot";
+
+                detenerContador();
+
+            }
+        );
+
+
+        // ================================
+        // EVENTO: ESPERANDO DATOS
+        // ================================
+
+        radio.addEventListener(
+            "waiting",
+            () => {
+
+                statusText.textContent =
+                    "Esperando datos del servidor...";
+
+                statusDot.className =
+                    "status-dot waiting";
+
+                detenerContador();
+
+            }
+        );
+
+
+        // ================================
+        // EVENTO: BUFFER VACÍO
+        // ================================
+
+        radio.addEventListener(
+            "stalled",
+            () => {
+
+                statusText.textContent =
+                    "Transmisión interrumpida...";
+
+                statusDot.className =
+                    "status-dot waiting";
+
+                detenerContador();
+
+            }
+        );
+
+
+        // ================================
+        // EVENTO: ERROR
+        // ================================
+
+        radio.addEventListener(
+            "error",
+            () => {
+
+                playButton.textContent =
+                    "▶ REINTENTAR";
+
+                statusText.textContent =
+                    "Error en la transmisión";
+
+                statusDot.className =
+                    "status-dot error";
+
+                detenerContador();
+
+
+                console.error(
+                    "Código de error:",
+                    radio.error
+                );
+
+            }
+        );
+
+
+        // ================================
+        // EVENTO: AUDIO FINALIZADO
+        // ================================
+
+        radio.addEventListener(
+            "ended",
+            () => {
+
+                playButton.textContent =
+                    "▶ RECONECTAR";
+
+                statusText.textContent =
+                    "El servidor cerró la transmisión";
+
+                statusDot.className =
+                    "status-dot error";
+
+                detenerContador();
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
